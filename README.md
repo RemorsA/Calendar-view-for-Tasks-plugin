@@ -1,0 +1,1 @@
+# Obsidian Sample Plugin

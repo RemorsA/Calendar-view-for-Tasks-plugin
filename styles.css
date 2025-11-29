@@ -1,0 +1,862 @@
+/* Task Calendar Styles - All styles centralized here */
+
+/* ============================================
+   Task Calendar Container
+   ============================================ */
+.task-calendar-container {
+	padding: 1rem;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	/* Block browser default horizontal touch gestures (side panels) */
+	/* Allow vertical scrolling but block horizontal pan gestures */
+	touch-action: pan-y;
+	-webkit-touch-callout: none;
+}
+
+/* ============================================
+   Calendar Header
+   ============================================ */
+.task-calendar-container .task-calendar-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 1rem;
+	padding: 0.5rem;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+}
+
+.task-calendar-container .task-calendar-nav-group {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.task-calendar-container .task-calendar-nav-btn {
+	background: var(--interactive-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 0.5rem 1rem;
+	cursor: pointer;
+	font-size: 1.2rem;
+	transition: background-color 0.2s;
+}
+
+.task-calendar-container .task-calendar-nav-btn:hover {
+	background: var(--interactive-hover);
+}
+
+.task-calendar-container .task-calendar-month-year {
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.task-calendar-container .task-calendar-month-year-btn {
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	padding: 0.5rem 1rem;
+	border-radius: 4px;
+	transition: all 0.2s;
+}
+
+.task-calendar-container .task-calendar-month-year-btn:hover {
+	background: var(--interactive-hover);
+	color: var(--interactive-accent);
+}
+
+.task-calendar-container .task-calendar-month-year-current {
+	color: var(--interactive-accent) !important;
+	font-weight: 700;
+}
+
+.task-calendar-container .task-calendar-filter-btn {
+	background: var(--interactive-normal);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 0.5rem;
+	cursor: pointer;
+	transition: all 0.2s;
+	font-size: 1.2rem;
+	min-width: 2.5rem;
+	height: 2.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--text-normal);
+}
+
+.task-calendar-container .task-calendar-filter-btn svg {
+	width: 16px;
+	height: 16px;
+	stroke: currentColor;
+}
+
+.task-calendar-container .task-calendar-filter-btn:hover {
+	background: var(--interactive-hover);
+}
+
+.task-calendar-container .task-calendar-filter-btn.active {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.task-calendar-container .task-calendar-filter-btn-hidden {
+	opacity: 0.5;
+	color: var(--text-muted);
+}
+
+.task-calendar-container .task-calendar-filter-btn-hidden:hover {
+	opacity: 0.8;
+}
+
+/* ============================================
+   Calendar Grid
+   ============================================ */
+.task-calendar-container .task-calendar-grid-container {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+	transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+	will-change: transform;
+	backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
+	/* Block horizontal pan gestures to prevent side panels */
+	touch-action: pan-y;
+	overscroll-behavior-x: none;
+	-webkit-overflow-scrolling: touch;
+	/* Hide scrollbar */
+	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* IE and Edge */
+}
+
+.task-calendar-container .task-calendar-grid-container::-webkit-scrollbar {
+	display: none; /* Chrome, Safari, Opera */
+}
+
+.task-calendar-container .task-calendar-day-headers {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 2px;
+	margin-bottom: 4px;
+	width: 100%;
+}
+
+.task-calendar-container .task-calendar-day-header {
+	padding: 0.5rem;
+	text-align: center;
+	font-weight: 600;
+	font-size: 0.9rem;
+	color: var(--text-muted);
+	background: var(--background-secondary);
+	border-radius: 4px;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.task-calendar-container .task-calendar-grid {
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	grid-template-rows: repeat(6, 1fr);
+	gap: 2px;
+	flex: 1;
+	width: 100%;
+	min-height: 0;
+}
+
+.task-calendar-container .task-calendar-cell {
+	min-height: 0;
+	height: 100%;
+	padding: 0.5rem;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	display: flex;
+	flex-direction: column;
+	cursor: default;
+	transition: background-color 0.2s;
+	min-width: 0;
+	overflow: hidden;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+	user-select: none;
+}
+
+.task-calendar-container .task-calendar-cell:hover {
+	background: var(--background-modifier-hover);
+}
+
+.task-calendar-container .task-calendar-cell-other-month {
+	opacity: 0.4;
+}
+
+.task-calendar-container .task-calendar-cell-today {
+	border: 2px solid var(--interactive-accent);
+	background: var(--background-modifier-active);
+}
+
+.task-calendar-container .task-calendar-day-number {
+	font-weight: 600;
+	margin-bottom: 0.5rem;
+	color: var(--text-normal);
+	display: flex;
+	align-items: center;
+	gap: 0.2rem;
+}
+
+.task-calendar-container .task-calendar-day-task-count {
+	font-weight: 400;
+	font-size: 0.85em;
+	color: var(--text-muted);
+	vertical-align: middle;
+	line-height: 1;
+}
+
+.task-calendar-container .task-calendar-tasks {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.task-calendar-container .task-calendar-task {
+	font-size: 0.7rem;
+	padding: 0.15rem 0.35rem;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-radius: 2px;
+	cursor: pointer;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	transition: opacity 0.2s;
+	line-height: 1.3;
+	flex-shrink: 0;
+}
+
+/* Markdown content in task cells */
+.task-calendar-container .task-calendar-task > * {
+	display: inline;
+	margin: 0;
+	padding: 0;
+	line-height: 1.3;
+}
+
+.task-calendar-container .task-calendar-task p {
+	margin: 0;
+	display: inline;
+	line-height: 1.3;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.task-calendar-container .task-calendar-task p:not(:last-child)::after {
+	content: ' ';
+}
+
+.task-calendar-container .task-calendar-task strong,
+.task-calendar-container .task-calendar-task b {
+	font-weight: 600;
+}
+
+.task-calendar-container .task-calendar-task em,
+.task-calendar-container .task-calendar-task i {
+	font-style: italic;
+}
+
+.task-calendar-container .task-calendar-task code {
+	font-size: 0.85em;
+	background: rgba(0, 0, 0, 0.2);
+	padding: 0.1em 0.2em;
+	border-radius: 2px;
+	white-space: nowrap;
+}
+
+.task-calendar-container .task-calendar-task a {
+	color: inherit;
+	text-decoration: underline;
+	opacity: 0.9;
+}
+
+.task-calendar-container .task-calendar-task-completed {
+	opacity: 0.6;
+	text-decoration: line-through;
+}
+
+.task-calendar-container .task-calendar-task-overdue {
+	background: #8b6914 !important; /* Dark yellow/orange */
+	color: var(--text-on-accent) !important;
+	border: 1px solid #6b4f0f;
+	font-weight: 500;
+}
+
+.task-calendar-container .task-calendar-more {
+	font-size: 0.65rem;
+	color: var(--text-muted);
+	padding: 0.15rem 0.25rem;
+	flex-shrink: 0;
+	margin-top: auto;
+	text-align: center;
+	background: var(--background-modifier-hover);
+	border-radius: 2px;
+}
+
+.task-calendar-container .task-calendar-more:hover {
+	color: var(--text-normal);
+}
+
+.task-calendar-container .task-calendar-empty-message {
+	text-align: center;
+	padding: 3rem;
+	color: var(--text-muted);
+}
+
+.task-calendar-container .task-calendar-empty-message h3 {
+	margin-bottom: 1rem;
+	color: var(--text-normal);
+}
+
+.task-calendar-container .task-calendar-empty-message p {
+	margin: 0.5rem 0;
+}
+
+/* ============================================
+   Floating Action Button
+   ============================================ */
+.task-calendar-fab {
+	position: fixed;
+	bottom: 2rem;
+	right: 2rem;
+	width: 56px;
+	height: 56px;
+	border-radius: 50%;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	z-index: 99999;
+	border: none;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+	pointer-events: auto;
+	user-select: none;
+}
+
+.task-calendar-fab:hover {
+	background: var(--interactive-accent-hover);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+	transform: scale(1.05);
+}
+
+.task-calendar-fab:active {
+	transform: scale(0.95);
+}
+
+.task-calendar-fab-icon {
+	font-size: 2rem;
+	font-weight: 300;
+	line-height: 1;
+	user-select: none;
+}
+
+/* ============================================
+   Tasks for Date Modal
+   ============================================ */
+.tasks-for-date-modal {
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.tasks-for-date-modal-header {
+	padding: 1.5rem 1.5rem 1rem;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.tasks-for-date-modal-header h2 {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: 600;
+}
+
+.tasks-for-date-modal-header-clickable {
+	cursor: pointer;
+	transition: color 0.2s ease, opacity 0.2s ease, text-decoration 0.2s ease;
+	user-select: none;
+	text-decoration: underline;
+	text-decoration-color: var(--interactive-accent);
+	text-underline-offset: 0.2em;
+}
+
+.tasks-for-date-modal-header-clickable:hover {
+	color: var(--interactive-accent);
+	opacity: 0.9;
+	text-decoration-color: var(--interactive-accent-hover);
+}
+
+.tasks-for-date-modal-header-clickable:active {
+	opacity: 0.7;
+	transform: scale(0.98);
+	text-decoration-color: var(--interactive-accent);
+}
+
+.tasks-for-date-modal-content {
+	max-height: 60vh;
+	overflow-y: auto;
+	padding: 1.5rem;
+	line-height: 1.6;
+	flex: 1;
+}
+
+.tasks-for-date-modal-empty {
+	padding: 2rem 1.5rem;
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.tasks-for-date-modal-content ul,
+.tasks-for-date-modal-content ol {
+	margin: 0.5rem 0;
+	padding-left: 1.5rem;
+}
+
+.tasks-for-date-modal-content ul ul,
+.tasks-for-date-modal-content ol ol,
+.tasks-for-date-modal-content ul ol,
+.tasks-for-date-modal-content ol ul {
+	margin: 0.25rem 0;
+	padding-left: 1.5rem;
+}
+
+.tasks-for-date-modal-content li {
+	margin: 0.25rem 0;
+	display: list-item;
+	list-style-position: outside;
+}
+
+.tasks-for-date-modal-content li p {
+	margin: 0;
+	display: inline;
+}
+
+.tasks-for-date-modal-content p {
+	margin: 0.5rem 0;
+}
+
+.tasks-for-date-modal-content p:first-child {
+	margin-top: 0;
+}
+
+.tasks-for-date-modal-content p:last-child {
+	margin-bottom: 0;
+}
+
+.tasks-for-date-modal-content input[type="checkbox"] {
+	cursor: pointer;
+	margin-right: 0.5rem;
+	width: 1.2em;
+	height: 1.2em;
+	vertical-align: middle;
+}
+
+.tasks-for-date-modal-footer {
+	padding: 1rem 1.5rem;
+	border-top: 1px solid var(--background-modifier-border);
+	display: flex;
+	justify-content: flex-end;
+	background: var(--background-primary);
+	flex-shrink: 0;
+}
+
+.tasks-for-date-modal-close-btn {
+	padding: 0.5rem 1.5rem;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 0.9rem;
+	font-weight: 500;
+	transition: background 0.2s ease;
+}
+
+.tasks-for-date-modal-close-btn:hover {
+	background: var(--interactive-accent-hover);
+}
+
+.tasks-for-date-modal-close-btn:active {
+	transform: scale(0.98);
+}
+
+/* Global styles for Obsidian modal root element */
+.tasks-for-date-modal-root .modal-close-button {
+	display: none !important;
+}
+
+/* ============================================
+   Mobile Adjustments
+   ============================================ */
+@media (max-width: 768px) {
+	.task-calendar-container {
+		padding: 0.5rem;
+	}
+
+	.task-calendar-container .task-calendar-header {
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		margin-bottom: 0.75rem;
+		padding: 0.5rem;
+	}
+
+	.task-calendar-container .task-calendar-nav-btn {
+		padding: 0.4rem 0.8rem;
+		font-size: 1rem;
+		min-width: 44px; /* Minimum touch target size */
+		min-height: 44px;
+	}
+
+	.task-calendar-container .task-calendar-nav-btn:active {
+		transform: scale(0.95);
+	}
+
+	.task-calendar-container .task-calendar-month-year {
+		font-size: 1.1rem;
+		flex: 1;
+		text-align: center;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.task-calendar-container .task-calendar-month-year-btn {
+		padding: 0.4rem 0.5rem;
+		min-width: 44px;
+		min-height: 44px;
+	}
+
+	.task-calendar-container .task-calendar-month-year-btn:active {
+		transform: scale(0.98);
+	}
+
+	.task-calendar-container .task-calendar-day-headers {
+		gap: 1px;
+		margin-bottom: 2px;
+	}
+
+	.task-calendar-container .task-calendar-day-header {
+		padding: 0.4rem 0.2rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+	}
+
+	.task-calendar-container .task-calendar-grid {
+		gap: 1px;
+	}
+
+	.task-calendar-container .task-calendar-cell {
+		min-height: 0;
+		height: 100%;
+		padding: 0.3rem 0.2rem;
+		border-radius: 3px;
+		outline: none !important;
+		-webkit-tap-highlight-color: transparent;
+	}
+	
+	.task-calendar-container .task-calendar-cell:focus {
+		outline: none !important;
+		box-shadow: none !important;
+	}
+	
+	.task-calendar-container .task-calendar-cell:active {
+		background: var(--background-modifier-hover);
+		transform: scale(0.98);
+		outline: none !important;
+		box-shadow: none !important;
+	}
+
+	.task-calendar-container .task-calendar-day-number {
+		font-size: 0.8rem;
+		margin-bottom: 0.3rem;
+		font-weight: 500;
+	}
+	
+	.task-calendar-container .task-calendar-day-task-count {
+		font-size: 0.75em;
+	}
+
+	.task-calendar-container .task-calendar-tasks {
+		gap: 1px;
+	}
+
+	.task-calendar-container .task-calendar-task {
+		font-size: 0.55rem;
+		padding: 0.15rem 0.25rem;
+		line-height: 1.2;
+		flex-shrink: 0;
+	}
+
+	.task-calendar-container .task-calendar-task:active {
+		opacity: 0.7;
+		transform: scale(0.98);
+	}
+
+	.task-calendar-container .task-calendar-more {
+		font-size: 0.6rem;
+		padding: 0.1rem 0.2rem;
+		margin-top: auto;
+	}
+
+	.task-calendar-container .task-calendar-empty-message {
+		padding: 2rem 1rem;
+	}
+
+	.task-calendar-container .task-calendar-empty-message h3 {
+		font-size: 1.1rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.task-calendar-container .task-calendar-empty-message p {
+		font-size: 0.9rem;
+		margin: 0.4rem 0;
+	}
+
+	.task-calendar-fab {
+		bottom: 1.5rem;
+		right: 1.5rem;
+		width: 52px;
+		height: 52px;
+	}
+	
+	.task-calendar-fab-icon {
+		font-size: 1.75rem;
+	}
+
+	/* Make Obsidian modal fullscreen on mobile */
+	.tasks-for-date-modal-root {
+		max-width: 100vw !important;
+		width: 100vw !important;
+		height: 100vh !important;
+		max-height: 100vh !important;
+		margin: 0 !important;
+		border-radius: 0 !important;
+		top: 0 !important;
+		left: 0 !important;
+		right: 0 !important;
+		bottom: 0 !important;
+	}
+	
+	.tasks-for-date-modal {
+		max-width: 100vw;
+		max-height: 100vh;
+		margin: 0;
+		border-radius: 0;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		justify-content: space-between;
+	}
+	
+	.tasks-for-date-modal-header {
+		padding: 1rem 1rem 0.75rem;
+	}
+	
+	.tasks-for-date-modal-header h2 {
+		font-size: 1.1rem;
+	}
+	
+	.tasks-for-date-modal-content {
+		max-height: calc(100vh - 180px);
+		padding: 1rem;
+		font-size: 0.95rem;
+		flex: 1;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior: contain;
+		scroll-behavior: smooth;
+	}
+	
+	.tasks-for-date-modal-footer {
+		padding: 0.75rem 1rem;
+	}
+	
+	.tasks-for-date-modal-close-btn {
+		padding: 0.6rem 1.25rem;
+		min-width: 44px;
+		min-height: 44px;
+		touch-action: manipulation;
+		-webkit-tap-highlight-color: transparent;
+	}
+	
+	.tasks-for-date-modal-empty {
+		padding: 1.5rem 1rem;
+	}
+	
+	.tasks-for-date-modal-content ul,
+	.tasks-for-date-modal-content ol {
+		margin: 0.4rem 0;
+		padding-left: 1.25rem;
+	}
+	
+	.tasks-for-date-modal-content ul ul,
+	.tasks-for-date-modal-content ol ol,
+	.tasks-for-date-modal-content ul ol,
+	.tasks-for-date-modal-content ol ul {
+		margin: 0.2rem 0;
+		padding-left: 1.25rem;
+	}
+	
+	.tasks-for-date-modal-content li {
+		margin: 0.2rem 0;
+		min-height: 44px;
+		padding: 0.5rem 0;
+		touch-action: manipulation;
+	}
+	
+	.tasks-for-date-modal-content li p {
+		margin: 0;
+		line-height: 1.5;
+	}
+
+	.tasks-for-date-modal-content button,
+	.tasks-for-date-modal-content a[role="button"] {
+		min-width: 44px;
+		min-height: 44px;
+		touch-action: manipulation;
+		-webkit-tap-highlight-color: transparent;
+	}
+}
+
+/* Extra small screens */
+@media (max-width: 480px) {
+	.task-calendar-container {
+		padding: 0.25rem;
+	}
+
+	.task-calendar-container .task-calendar-header {
+		padding: 0.4rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.task-calendar-container .task-calendar-nav-btn {
+		padding: 0.35rem 0.6rem;
+		font-size: 0.9rem;
+		min-width: 40px;
+		min-height: 40px;
+	}
+
+	.task-calendar-container .task-calendar-month-year {
+		font-size: 1rem;
+	}
+
+	.task-calendar-container .task-calendar-day-header {
+		padding: 0.3rem 0.1rem;
+		font-size: 0.7rem;
+	}
+
+	.task-calendar-container .task-calendar-cell {
+		min-height: 0;
+		height: 100%;
+		padding: 0.25rem 0.15rem;
+	}
+
+	.task-calendar-container .task-calendar-day-number {
+		font-size: 0.75rem;
+		margin-bottom: 0.2rem;
+	}
+	
+	.task-calendar-container .task-calendar-day-task-count {
+		font-size: 0.7em;
+	}
+
+	.task-calendar-container .task-calendar-task {
+		font-size: 0.5rem;
+		padding: 0.1rem 0.2rem;
+		line-height: 1.2;
+		flex-shrink: 0;
+	}
+
+	.tasks-for-date-modal-root {
+		padding: 0 !important;
+	}
+	
+	.tasks-for-date-modal-header {
+		padding: 0.75rem 0.75rem 0.5rem;
+	}
+	
+	.tasks-for-date-modal-header h2 {
+		font-size: 1rem;
+	}
+	
+	.tasks-for-date-modal-content {
+		max-height: calc(100vh - 160px);
+		padding: 0.75rem;
+		font-size: 0.9rem;
+		overscroll-behavior: contain;
+	}
+	
+	.tasks-for-date-modal-footer {
+		padding: 0.5rem 0.75rem;
+	}
+	
+	.tasks-for-date-modal-close-btn {
+		padding: 0.5rem 1rem;
+		min-width: 40px;
+		min-height: 40px;
+		font-size: 0.85rem;
+	}
+	
+	.tasks-for-date-modal-empty {
+		padding: 1rem 0.75rem;
+	}
+	
+	.tasks-for-date-modal-content ul,
+	.tasks-for-date-modal-content ol {
+		padding-left: 1rem;
+	}
+	
+	.tasks-for-date-modal-content ul ul,
+	.tasks-for-date-modal-content ol ol,
+	.tasks-for-date-modal-content ul ol,
+	.tasks-for-date-modal-content ol ul {
+		padding-left: 1rem;
+	}
+	
+	.tasks-for-date-modal-content button,
+	.tasks-for-date-modal-content a[role="button"] {
+		min-width: 40px;
+		min-height: 40px;
+		padding: 0.5rem;
+	}
+	
+	.tasks-for-date-modal-content li {
+		min-height: 40px;
+		padding: 0.4rem 0;
+	}
+	
+	.tasks-for-date-modal-content li p {
+		margin: 0;
+		line-height: 1.5;
+	}
+}
+
+.workspace-leaf-content .view-content {
+	overflow-x: hidden !important;
+}
+.modal {
+	overflow-x: hidden !important;
+}

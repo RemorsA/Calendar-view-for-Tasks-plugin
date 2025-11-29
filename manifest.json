@@ -1,0 +1,11 @@
+{
+	"id": "tasks-plugin-calendar",
+	"name": "Tasks-plugin Calendar",
+	"version": "0.2.0",
+	"minAppVersion": "0.15.0",
+	"description": "Displaying the tasks plugin as a calendar",
+	"author": "Remorse",
+	"authorUrl": "https://github.com/RemorsA",
+	"fundingUrl": "https://github.com/RemorsA/Tasks-Plugin-Calendar",
+	"isDesktopOnly": false
+}
