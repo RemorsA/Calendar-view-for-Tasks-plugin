@@ -1,23 +1,29 @@
 import { TFile } from 'obsidian';
 
 export interface CreateTaskButtonSettings {
-	tasksFolderPath: string; // Legacy field for backward compatibility
-	createTaskFolderPath: string; // Path for creating new tasks
-	calendarFolderPath: string; // Path for loading tasks in calendar
+	tasksFolderPath: string;
+	createTaskFolderPath: string;
+	calendarFolderPath: string;
 	language: 'ru' | 'en';
-	showCompletedTasks: boolean; // Show/hide completed tasks in calendar
-	autoOpenCalendar: boolean; // Automatically open calendar view on app startup
-	closeOtherTabs: boolean; // Close other tabs when calendar is opened (only works if autoOpenCalendar is enabled)
+	filenameFormat: string;
+	showCompletedTasks: boolean;
+	autoOpenCalendar: boolean;
+	incompleteTaskColor: string;
+	completedTaskColor: string;
+	overdueTaskColor: string;
 }
 
 export const DEFAULT_SETTINGS: CreateTaskButtonSettings = {
-	tasksFolderPath: '', // Legacy
+	tasksFolderPath: '',
 	createTaskFolderPath: '',
 	calendarFolderPath: '',
 	language: 'en',
+	filenameFormat: 'YYYY-MM',
 	showCompletedTasks: true,
 	autoOpenCalendar: false,
-	closeOtherTabs: false
+	incompleteTaskColor: '',
+	completedTaskColor: '',
+	overdueTaskColor: ''
 };
 
 export interface Task {
@@ -27,4 +33,3 @@ export interface Task {
 	line: number;
 	isCompleted: boolean;
 }
-

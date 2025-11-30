@@ -1,12 +1,35 @@
-import { App, Editor, ItemView, MarkdownRenderer, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf } from 'obsidian';
+import { App, Editor, ItemView, MarkdownRenderer, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, WorkspaceLeaf, moment } from 'obsidian';
 import { t, Language } from './locales';
 import { CreateTaskButtonSettings, DEFAULT_SETTINGS, Task } from './types';
 
+const COLOR_PRESETS = [
+	{ name: 'Banana Cream', value: '#EEDCA7' },
+	{ name: 'Deep Blueberry', value: '#2D3E56' },
+	{ name: 'Warm Caramel', value: '#E7993F' },
+	{ name: 'Iced Mint', value: '#AAC6AD' },
+	{ name: 'Dark Chocolate', value: '#422B21' },
+	{ name: 'Vanilla Chocolate', value: '#DFCFBA' }
+];
+
+function getContrastYIQ(hexcolor: string) {
+	if (!hexcolor || !hexcolor.startsWith('#')) return 'var(--text-on-accent)';
+	hexcolor = hexcolor.replace('#', '');
+	const r = parseInt(hexcolor.substr(0,2),16);
+	const g = parseInt(hexcolor.substr(2,2),16);
+	const b = parseInt(hexcolor.substr(4,2),16);
+	const yiq = ((r*299)+(g*587)+(b*114))/1000;
+	// If light background (high YIQ), use dark text. Else use light text.
+	// In Obsidian, text-normal is usually dark in light mode, light in dark mode.
+	// We need explicit black/white or careful variable usage.
+	// If light background (high YIQ), use dark text. Else use light text.
+	// In Obsidian, text-normal is usually dark in light mode, light in dark mode.
+	// We need explicit black/white or careful variable usage.
+	return (yiq >= 128) ? '#000000' : '#ffffff';
+}
+
 export default class CreateTaskButtonPlugin extends Plugin {
 	settings: CreateTaskButtonSettings;
-	activeLeafChangeHandler: ((leaf: WorkspaceLeaf) => void) | null = null;
 	private isFirstLaunch: boolean = false;
-	private blockSwitchingTimeout: number | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -34,20 +57,6 @@ export default class CreateTaskButtonPlugin extends Plugin {
 			this.app.workspace.onLayoutReady(() => {
 				this.isFirstLaunch = true;
 				this.openCalendarView();
-				
-				// Close other tabs if enabled
-				if (this.settings.closeOtherTabs) {
-					this.closeOtherTabs();
-				}
-				
-				// Block tab switching temporarily if enabled
-				if (this.settings.closeOtherTabs) {
-					this.blockTabSwitching();
-					// Remove blocking after 10 seconds
-					this.blockSwitchingTimeout = window.setTimeout(() => {
-						this.unblockTabSwitching();
-					}, 10000);
-				}
 			});
 		}
 
@@ -71,14 +80,6 @@ export default class CreateTaskButtonPlugin extends Plugin {
 	}
 
 	onunload() {
-		// Remove tab switching blocker
-		this.unblockTabSwitching();
-		
-		// Clear timeout if exists
-		if (this.blockSwitchingTimeout !== null) {
-			clearTimeout(this.blockSwitchingTimeout);
-			this.blockSwitchingTimeout = null;
-		}
 	}
 
 	async createTask(date?: Date) {
@@ -113,7 +114,6 @@ export default class CreateTaskButtonPlugin extends Plugin {
 		if (dateStr) {
 			try {
 				const initialTask = `- [ ] due::${dateStr} `;
-				// Some API versions accept initial content
 				if (tasksApi.createTaskLineModal.length > 0) {
 					taskLine = await (tasksApi.createTaskLineModal as any)(initialTask);
 				}
@@ -125,7 +125,6 @@ export default class CreateTaskButtonPlugin extends Plugin {
 		// Method 2: Try passing date as parameter object
 		if (!taskLine && dateStr) {
 			try {
-				// Some API versions accept options object
 				if (typeof (tasksApi.createTaskLineModal as any) === 'function') {
 					const result = await (tasksApi.createTaskLineModal as any)({ 
 						initialValue: `- [ ] due::${dateStr} `,
@@ -160,7 +159,6 @@ export default class CreateTaskButtonPlugin extends Plugin {
 			// Check if task already has a date (due, start, scheduled, or calendar emoji)
 			const hasDate = taskLine.match(/due::|due:|start::|start:|scheduled::|scheduled:|📅/i);
 			if (!hasDate) {
-				// Add due date in Tasks plugin format at the end of the task line
 				finalTaskLine = taskLine.trim() + ' due::' + dateStr;
 			}
 		}
@@ -224,15 +222,13 @@ export default class CreateTaskButtonPlugin extends Plugin {
 		return null;
 	}
 
-	private getMonthHeader(date: Date): string {
-		const year = date.getFullYear();
-		const month = String(date.getMonth() + 1).padStart(2, '0');
-		return `${year}-${month}`;
+	private getDateHeader(date: Date): string {
+		return moment(date).format(this.settings.filenameFormat || 'YYYY-MM');
 	}
 
 	private async getOrCreateMonthlyNote(date: Date): Promise<TFile | null> {
-		const monthHeader = this.getMonthHeader(date);
-		const fileName = `${monthHeader}.md`;
+		const dateHeader = this.getDateHeader(date);
+		const fileName = `${dateHeader}.md`;
 		
 		// Use createTaskFolderPath, fallback to tasksFolderPath for backward compatibility
 		const folderPathSetting = this.settings.createTaskFolderPath || this.settings.tasksFolderPath || '';
@@ -312,83 +308,6 @@ export default class CreateTaskButtonPlugin extends Plugin {
 
 		if (leaf) {
 			workspace.setActiveLeaf(leaf);
-			
-			// Close other tabs if enabled
-			if (this.settings.closeOtherTabs && this.settings.autoOpenCalendar) {
-				this.closeOtherTabs();
-			}
-		}
-	}
-
-	private closeOtherTabs() {
-		const { workspace } = this.app;
-		const calendarLeaves = workspace.getLeavesOfType('task-calendar-view');
-		
-		if (calendarLeaves.length === 0) {
-			return;
-		}
-
-		const calendarLeaf = calendarLeaves[0];
-		
-		// Get all leaves from all workspace containers
-		const allLeaves: WorkspaceLeaf[] = [];
-		workspace.iterateAllLeaves((leaf) => {
-			allLeaves.push(leaf);
-		});
-		
-		// Close all leaves except the calendar leaf
-		for (const leaf of allLeaves) {
-			if (leaf !== calendarLeaf) {
-				leaf.detach();
-			}
-		}
-	}
-
-	blockTabSwitching() {
-		const { workspace } = this.app;
-		
-		// Remove old handler if exists
-		if (this.activeLeafChangeHandler) {
-			workspace.off('active-leaf-change', this.activeLeafChangeHandler);
-		}
-		
-		// Create new handler
-		this.activeLeafChangeHandler = (leaf: WorkspaceLeaf) => {
-			// Only block if this is first launch and settings are enabled
-			if (!this.isFirstLaunch) {
-				return;
-			}
-			
-			// Check if the active leaf is a calendar view
-			const isCalendarView = leaf.view.getViewType() === 'task-calendar-view';
-			
-			if (!isCalendarView && this.settings.closeOtherTabs && this.settings.autoOpenCalendar) {
-				// User is trying to switch away from calendar - allow it and remove blocking
-				// This allows user to switch after first launch
-				this.unblockTabSwitching();
-			}
-		};
-		
-		// Register the handler
-		this.registerEvent(workspace.on('active-leaf-change', this.activeLeafChangeHandler));
-	}
-
-	unblockTabSwitching() {
-		const { workspace } = this.app;
-		
-		// Remove handler
-		if (this.activeLeafChangeHandler) {
-			workspace.off('active-leaf-change', this.activeLeafChangeHandler);
-			this.activeLeafChangeHandler = null;
-		}
-		
-		// Clear first launch flag
-		this.isFirstLaunch = false;
-		
-		// Clear timeout if exists
-		if (this.blockSwitchingTimeout !== null) {
-			clearTimeout(this.blockSwitchingTimeout);
-			this.blockSwitchingTimeout = null;
 		}
 	}
 }
@@ -422,6 +341,17 @@ class CreateTaskButtonSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
+			.setName(t(lang, 'filenameFormat'))
+			.setDesc(t(lang, 'filenameFormatDesc'))
+			.addText(text => text
+				.setPlaceholder('YYYY-MM')
+				.setValue(this.plugin.settings.filenameFormat || 'YYYY-MM')
+				.onChange(async (value) => {
+					this.plugin.settings.filenameFormat = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
 			.setName(t(lang, 'calendarTasksFolderPath'))
 			.setDesc(t(lang, 'calendarTasksFolderPathDesc'))
 			.addText(text => text
@@ -432,54 +362,15 @@ class CreateTaskButtonSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		let autoOpenSetting: Setting;
-		let closeOtherTabsSetting: Setting;
-		
-		autoOpenSetting = new Setting(containerEl)
+		new Setting(containerEl)
 			.setName(t(lang, 'autoOpenCalendar'))
 			.setDesc(t(lang, 'autoOpenCalendarDesc'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.autoOpenCalendar)
 				.onChange(async (value) => {
 					this.plugin.settings.autoOpenCalendar = value;
-					// If auto-open is disabled, also disable close other tabs
-					if (!value) {
-						this.plugin.settings.closeOtherTabs = false;
-					}
 					await this.plugin.saveSettings();
-					// Update the close other tabs setting state
-					if (closeOtherTabsSetting) {
-						closeOtherTabsSetting.settingEl.toggleClass('is-disabled', !value);
-						const toggleEl = closeOtherTabsSetting.controlEl.querySelector('input[type="checkbox"]') as HTMLInputElement;
-						if (toggleEl) {
-							toggleEl.disabled = !value;
-							if (!value) {
-								toggleEl.checked = false;
-							}
-						}
-					}
 				}));
-
-		closeOtherTabsSetting = new Setting(containerEl)
-			.setName(t(lang, 'closeOtherTabs'))
-			.setDesc(t(lang, 'closeOtherTabsDesc'))
-			.addToggle(toggle => {
-				toggle
-					.setValue(this.plugin.settings.closeOtherTabs)
-					.setDisabled(!this.plugin.settings.autoOpenCalendar)
-					.onChange(async (value) => {
-						this.plugin.settings.closeOtherTabs = value;
-						await this.plugin.saveSettings();
-						
-						// Note: Blocking only works on first launch, so we don't need to update it here
-						// The blocking is handled automatically during first launch
-					});
-			});
-		
-		// Set initial disabled state
-		if (!this.plugin.settings.autoOpenCalendar) {
-			closeOtherTabsSetting.settingEl.addClass('is-disabled');
-		}
 
 		new Setting(containerEl)
 			.setName(t(lang, 'language'))
@@ -491,7 +382,77 @@ class CreateTaskButtonSettingTab extends PluginSettingTab {
 				.onChange(async (value: 'ru' | 'en') => {
 					this.plugin.settings.language = value;
 					await this.plugin.saveSettings();
+					this.display(); // Refresh translations
 				}));
+				
+		containerEl.createEl('h3', { text: t(lang, 'taskColors') });
+		
+		this.addColorSetting(containerEl, 'incompleteTaskColor', 'incompleteTaskColorDesc', 'incompleteTaskColor');
+		this.addColorSetting(containerEl, 'completedTaskColor', 'completedTaskColorDesc', 'completedTaskColor');
+		this.addColorSetting(containerEl, 'overdueTaskColor', 'overdueTaskColorDesc', 'overdueTaskColor');
+	}
+
+	private addColorSetting(
+		containerEl: HTMLElement, 
+		nameKey: string, 
+		descKey: string, 
+		settingKey: 'incompleteTaskColor' | 'completedTaskColor' | 'overdueTaskColor'
+	) {
+		const lang = this.plugin.settings.language;
+		
+		const setting = new Setting(containerEl)
+			.setName(t(lang, nameKey))
+			.setDesc(t(lang, descKey));
+			
+		// Color picker
+		setting.addColorPicker(color => color
+			.setValue(this.plugin.settings[settingKey] || '')
+			.onChange(async (value) => {
+				this.plugin.settings[settingKey] = value;
+				await this.plugin.saveSettings();
+			}));
+			
+		// Add reset button
+		setting.addExtraButton(button => button
+			.setIcon('reset')
+			.setTooltip(t(lang, 'resetToDefault'))
+			.onClick(async () => {
+				this.plugin.settings[settingKey] = '';
+				await this.plugin.saveSettings();
+				this.display(); 
+			}));
+			
+		// Add presets
+		const presetsContainer = containerEl.createDiv('task-calendar-color-presets');
+		presetsContainer.style.display = 'flex';
+		presetsContainer.style.gap = '8px';
+		presetsContainer.style.marginBottom = '18px';
+		// Align with setting control (right side usually, but setting puts desc on left and control on right)
+		// We'll put it below the description
+		
+		presetsContainer.createSpan({ text: t(lang, 'presets') + ': ', cls: 'task-calendar-presets-label' });
+		
+		COLOR_PRESETS.forEach(preset => {
+			const presetBtn = presetsContainer.createEl('div', {
+				cls: 'task-calendar-color-preset',
+				attr: {
+					'aria-label': preset.name,
+					'title': preset.name
+				}
+			});
+			presetBtn.style.backgroundColor = preset.value;
+			presetBtn.style.width = '20px';
+			presetBtn.style.height = '20px';
+			presetBtn.style.borderRadius = '50%';
+			presetBtn.style.cursor = 'pointer';
+			presetBtn.style.border = '1px solid var(--background-modifier-border)';
+			
+			presetBtn.addEventListener('click', async () => {
+				this.plugin.settings[settingKey] = preset.value;
+				await this.plugin.saveSettings();
+				this.display();
+			});
+		});
 	}
 }
 
@@ -737,10 +698,16 @@ class TaskCalendarView extends ItemView {
 					taskDate = this.extractDateFromText(taskText);
 				}
 				
-				// Fallback to file date if filename matches YYYY-MM pattern
+				// Fallback to file date if filename matches configured pattern
 				if (!taskDate || isNaN(taskDate.getTime())) {
 					const fileName = file.basename;
-					if (/^\d{4}-\d{2}$/.test(fileName)) {
+					const format = this.plugin.settings.filenameFormat || 'YYYY-MM';
+					const parsedDate = moment(fileName, format, true);
+					
+					if (parsedDate.isValid()) {
+						taskDate = parsedDate.toDate();
+					} else if (/^\d{4}-\d{2}$/.test(fileName)) {
+						// Fallback to legacy YYYY-MM if current format doesn't match
 						const [year, month] = fileName.split('-').map(Number);
 						taskDate = new Date(year, month - 1, 1);
 					} else {
@@ -935,9 +902,15 @@ class TaskCalendarView extends ItemView {
 						taskDate = this.extractDateFromText(fullTaskText);
 						
 						if (!taskDate) {
-							// Use file date if filename matches YYYY-MM pattern
+							// Use file date if filename matches configured pattern
 							const fileName = file.basename;
-							if (/^\d{4}-\d{2}$/.test(fileName)) {
+							const format = this.plugin.settings.filenameFormat || 'YYYY-MM';
+							const parsedDate = moment(fileName, format, true);
+							
+							if (parsedDate.isValid()) {
+								taskDate = parsedDate.toDate();
+							} else if (/^\d{4}-\d{2}$/.test(fileName)) {
+								// Fallback to legacy YYYY-MM if current format doesn't match
 								const [year, month] = fileName.split('-').map(Number);
 								taskDate = new Date(year, month - 1, 1);
 							} else {
@@ -1587,8 +1560,19 @@ class TaskCalendarView extends ItemView {
 			const maxTasks = 4;
 			for (const task of sortedDayTasks.slice(0, maxTasks)) {
 				const taskEl = tasksContainer.createDiv('task-calendar-task');
+				
+				// Apply custom colors
 				if (task.isCompleted) {
 					taskEl.classList.add('task-calendar-task-completed');
+					if (this.plugin.settings.completedTaskColor) {
+						taskEl.style.backgroundColor = this.plugin.settings.completedTaskColor;
+						taskEl.style.color = getContrastYIQ(this.plugin.settings.completedTaskColor);
+					}
+				} else {
+					if (this.plugin.settings.incompleteTaskColor) {
+						taskEl.style.backgroundColor = this.plugin.settings.incompleteTaskColor;
+						taskEl.style.color = getContrastYIQ(this.plugin.settings.incompleteTaskColor);
+					}
 				}
 				
 				// Check if task is overdue (incomplete and date before today)
@@ -1598,6 +1582,13 @@ class TaskCalendarView extends ItemView {
 					// Using the same 'today' variable defined earlier in renderCalendar
 					if (taskDate.getTime() < today.getTime()) {
 						taskEl.classList.add('task-calendar-task-overdue');
+						// Overdue class has !important in CSS for background-color, so it should override inline style
+						// unless we use setProperty with priority
+						if (this.plugin.settings.overdueTaskColor) {
+							taskEl.style.setProperty('background-color', this.plugin.settings.overdueTaskColor, 'important');
+							taskEl.style.setProperty('color', getContrastYIQ(this.plugin.settings.overdueTaskColor), 'important');
+							taskEl.style.setProperty('border-color', 'rgba(0,0,0,0.2)', 'important');
+						}
 					}
 				}
 
@@ -2118,7 +2109,11 @@ class TasksForDateModal extends Modal {
 		// Render Overdue Tasks
 		if (overdueTasks.length > 0) {
 			const overdueContainer = markdownContainer.createDiv('tasks-modal-overdue-section');
-			overdueContainer.createEl('h3', { text: this.view.t('overdue') });
+			// Add separator header
+			overdueContainer.createEl('h3', { 
+				text: this.view.t('overdue'),
+				cls: 'tasks-modal-section-header'
+			});
 			
 			// Try to use Tasks plugin to render tasks with query
 			const plugins = (this.app as any).plugins;
@@ -2180,17 +2175,17 @@ sort by due
 					this.view.plugin
 				);
 			}
-			
-			overdueContainer.createEl('hr', { 
-				cls: 'task-calendar-modal-separator',
-				attr: { style: 'margin: 1.5rem 0; border: none; border-top: 2px dashed var(--text-faint); display: block; width: 100%;' }
-			});
 		}
 		
 		if (this.tasks.length === 0) {
 			const emptyMessage = markdownContainer.createDiv('tasks-for-date-modal-empty');
 			emptyMessage.textContent = this.view.t('noTasksForDate');
 		} else {
+			// Separate remaining tasks into incomplete (current) and completed
+			const currentDayTasks = this.tasks.filter(t => !overdueTasks.includes(t));
+			const incompleteTasks = currentDayTasks.filter(t => !t.isCompleted);
+			const completedTasks = currentDayTasks.filter(t => t.isCompleted);
+
 			// Try to use Tasks plugin to render tasks with query
 			const plugins = (this.app as any).plugins;
 			const tasksPlugin = plugins?.plugins?.['obsidian-tasks-plugin'];
@@ -2208,41 +2203,40 @@ sort by due
 					
 					const todayContainer = markdownContainer.createDiv('tasks-modal-today-section');
 
-					// Query for incomplete tasks
-					const queryIncomplete = `\`\`\`tasks
+					// Query for incomplete tasks (Current)
+					if (incompleteTasks.length > 0) {
+						// Add separator header for Current
+						todayContainer.createEl('h3', { 
+							text: this.view.t('current'),
+							cls: 'tasks-modal-section-header'
+						});
+
+						const queryIncomplete = `\`\`\`tasks
 due on ${dateQuery}
 not done
 show tree
 hide task count
 sort by due
 \`\`\``;
-					
-					// Render markdown - Tasks plugin should automatically process the tasks block
-					await MarkdownRenderer.renderMarkdown(
-						queryIncomplete,
-						todayContainer,
-						this.tasks[0]?.file.path || '',
-						this.view.plugin
-					);
-
-					// Check if we need a separator
-					const allTasksForDate = (this.view as any).tasks.filter((t: Task) => {
-						if (!t.date) return false;
-						return t.date.toDateString() === this.date.toDateString();
-					});
-					
-					const reallyHasCompleted = allTasksForDate.some((t: Task) => t.isCompleted);
-					const reallyHasIncomplete = allTasksForDate.some((t: Task) => !t.isCompleted);
-					
-					if (reallyHasCompleted && reallyHasIncomplete) {
-						todayContainer.createEl('hr', { 
-							cls: 'task-calendar-modal-separator',
-							attr: { style: 'margin: 1.5rem 0; border: none; border-top: 2px dashed var(--text-faint); display: block; width: 100%;' }
-						});
+						
+						// Render markdown - Tasks plugin should automatically process the tasks block
+						await MarkdownRenderer.renderMarkdown(
+							queryIncomplete,
+							todayContainer,
+							this.tasks[0]?.file.path || '',
+							this.view.plugin
+						);
 					}
 
-					// Query for completed tasks
-					const queryCompleted = `\`\`\`tasks
+					// Query for completed tasks (Completed)
+					if (completedTasks.length > 0) {
+						// Add separator header for Completed
+						todayContainer.createEl('h3', { 
+							text: this.view.t('completedSection'),
+							cls: 'tasks-modal-section-header'
+						});
+
+						const queryCompleted = `\`\`\`tasks
 due on ${dateQuery}
 done
 show tree
@@ -2250,12 +2244,13 @@ hide task count
 sort by due
 \`\`\``;
 
-					await MarkdownRenderer.renderMarkdown(
-						queryCompleted,
-						todayContainer,
-						this.tasks[0]?.file.path || '',
-						this.view.plugin
-					);
+						await MarkdownRenderer.renderMarkdown(
+							queryCompleted,
+							todayContainer,
+							this.tasks[0]?.file.path || '',
+							this.view.plugin
+						);
+					}
 					
 					// Wait for Tasks plugin to process the query block
 					await new Promise(resolve => setTimeout(resolve, 200));
@@ -2289,12 +2284,14 @@ sort by due
 				
 				const todayContainer = markdownContainer.createDiv('tasks-modal-today-section');
 
-				const currentDayTasks = this.tasks.filter(t => !overdueTasks.includes(t));
-				const completedTasks = currentDayTasks.filter(t => t.isCompleted);
-				const incompleteTasks = currentDayTasks.filter(t => !t.isCompleted);
-				
-				// Add incomplete tasks
+				// Add incomplete tasks (Current)
 				if (incompleteTasks.length > 0) {
+					// Add separator header for Current
+					todayContainer.createEl('h3', { 
+						text: this.view.t('current'),
+						cls: 'tasks-modal-section-header'
+					});
+
 					const markdown = await this.generateMarkdownForTasks(incompleteTasks);
 					await MarkdownRenderer.renderMarkdown(
 						markdown,
@@ -2304,16 +2301,14 @@ sort by due
 					);
 				}
 				
-				// Add separator if both lists have items
-				if (completedTasks.length > 0 && incompleteTasks.length > 0) {
-					todayContainer.createEl('hr', { 
-						cls: 'task-calendar-modal-separator',
-						attr: { style: 'margin: 1.5rem 0; border: none; border-top: 2px dashed var(--text-faint);' }
-					});
-				}
-				
-				// Add completed tasks
+				// Add completed tasks (Completed)
 				if (completedTasks.length > 0) {
+					// Add separator header for Completed
+					todayContainer.createEl('h3', { 
+						text: this.view.t('completedSection'),
+						cls: 'tasks-modal-section-header'
+					});
+
 					const markdown = await this.generateMarkdownForTasks(completedTasks);
 					await MarkdownRenderer.renderMarkdown(
 						markdown,
@@ -2711,11 +2706,10 @@ sort by due
 	
 	private async openMonthlyNoteFile() {
 		try {
-			// Get month header in format YYYY-MM
-			const year = this.date.getFullYear();
-			const month = String(this.date.getMonth() + 1).padStart(2, '0');
-			const monthHeader = `${year}-${month}`;
-			const fileName = `${monthHeader}.md`;
+			// Get header/filename based on configured format
+			const format = this.view.plugin.settings.filenameFormat || 'YYYY-MM';
+			const dateHeader = moment(this.date).format(format);
+			const fileName = `${dateHeader}.md`;
 			
 			// Use createTaskFolderPath, fallback to tasksFolderPath for backward compatibility
 			const folderPathSetting = this.view.plugin.settings.createTaskFolderPath || this.view.plugin.settings.tasksFolderPath || '';
@@ -2834,7 +2828,7 @@ sort by due
 	onClose() {
 		const { contentEl } = this;
 		
-		// Cleanup swipe handlers
+		// Cleanup swipe hazndlers
 		if (this.swipeHandlers.container) {
 			if (this.swipeHandlers.start) {
 				this.swipeHandlers.container.removeEventListener('touchstart', this.swipeHandlers.start);

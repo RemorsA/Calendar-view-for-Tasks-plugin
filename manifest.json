@@ -1,11 +1,11 @@
 {
-	"id": "tasks-plugin-calendar",
-	"name": "Tasks-plugin Calendar",
-	"version": "0.2.0",
+	"id": "calendar-view-for-tasks-plugin",
+	"name": "Calendar view for Tasks plugin",
+	"version": "0.1.0",
 	"minAppVersion": "0.15.0",
-	"description": "Displaying the tasks plugin as a calendar",
+	"description": "Show tasks as a calendar",
 	"author": "Remorse",
 	"authorUrl": "https://github.com/RemorsA",
-	"fundingUrl": "https://github.com/RemorsA/Tasks-Plugin-Calendar",
+	"fundingUrl": "https://github.com/RemorsA/Calendar-view-for-Tasks-plugin",
 	"isDesktopOnly": false
 }
