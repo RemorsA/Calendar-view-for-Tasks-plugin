@@ -27,6 +27,8 @@ All task management functionality from the tasks plugin also works.
 
 In the modal window, if you click on the date, you will be redirected to the file where the tasks shown are located.
 
+In the upper right corner there is a filter that shows or hides uncompleted tasks.
+
 # Settings
 
 1. Create task folder path - The folder where tasks will be saved when quickly added.
