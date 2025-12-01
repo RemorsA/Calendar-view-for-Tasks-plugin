@@ -1532,7 +1532,10 @@ class TaskCalendarView extends ItemView {
 				dayTasks = [...overdueTasks, ...dayTasks];
 			}
 			
-			// Apply filter for completed tasks
+			// Keep a copy of all tasks for the modal (unfiltered)
+			const modalTasks = [...dayTasks];
+			
+			// Apply filter for completed tasks (for calendar display only)
 			if (!this.showCompletedTasks) {
 				dayTasks = dayTasks.filter(task => !task.isCompleted);
 			}
@@ -1644,7 +1647,7 @@ class TaskCalendarView extends ItemView {
 				
 				// Add click handler for desktop
 				cell.addEventListener('click', () => {
-					new TasksForDateModal(this.app, this, cellDate, sortedDayTasks).open();
+					new TasksForDateModal(this.app, this, cellDate, modalTasks).open();
 				});
 				
 				// Add touch handler for mobile
@@ -1676,7 +1679,7 @@ class TaskCalendarView extends ItemView {
 							e.preventDefault();
 							e.stopPropagation();
 							e.stopImmediatePropagation();
-							new TasksForDateModal(this.app, this, cellDate, sortedDayTasks).open();
+							new TasksForDateModal(this.app, this, cellDate, modalTasks).open();
 						} else if (deltaX > 30 || (deltaX > deltaY && deltaX > 15)) {
 							// It's a horizontal swipe - let the swipe handler process it
 							// Don't prevent default or stop propagation
@@ -2109,12 +2112,7 @@ class TasksForDateModal extends Modal {
 		// Render Overdue Tasks
 		if (overdueTasks.length > 0) {
 			const overdueContainer = markdownContainer.createDiv('tasks-modal-overdue-section');
-			// Add separator header
-			overdueContainer.createEl('h3', { 
-				text: this.view.t('overdue'),
-				cls: 'tasks-modal-section-header'
-			});
-			
+			// Header removed as per user request			
 			// Try to use Tasks plugin to render tasks with query
 			const plugins = (this.app as any).plugins;
 			const tasksPlugin = plugins?.plugins?.['obsidian-tasks-plugin'];
@@ -2205,12 +2203,7 @@ sort by due
 
 					// Query for incomplete tasks (Current)
 					if (incompleteTasks.length > 0) {
-						// Add separator header for Current
-						todayContainer.createEl('h3', { 
-							text: this.view.t('current'),
-							cls: 'tasks-modal-section-header'
-						});
-
+						// Header removed as per user request
 						const queryIncomplete = `\`\`\`tasks
 due on ${dateQuery}
 not done
@@ -2218,7 +2211,6 @@ show tree
 hide task count
 sort by due
 \`\`\``;
-						
 						// Render markdown - Tasks plugin should automatically process the tasks block
 						await MarkdownRenderer.renderMarkdown(
 							queryIncomplete,
@@ -2230,12 +2222,7 @@ sort by due
 
 					// Query for completed tasks (Completed)
 					if (completedTasks.length > 0) {
-						// Add separator header for Completed
-						todayContainer.createEl('h3', { 
-							text: this.view.t('completedSection'),
-							cls: 'tasks-modal-section-header'
-						});
-
+						// Header removed as per user request
 						const queryCompleted = `\`\`\`tasks
 due on ${dateQuery}
 done
@@ -2286,11 +2273,8 @@ sort by due
 
 				// Add incomplete tasks (Current)
 				if (incompleteTasks.length > 0) {
-					// Add separator header for Current
-					todayContainer.createEl('h3', { 
-						text: this.view.t('current'),
-						cls: 'tasks-modal-section-header'
-					});
+					// Header removed as per user request
+
 
 					const markdown = await this.generateMarkdownForTasks(incompleteTasks);
 					await MarkdownRenderer.renderMarkdown(
@@ -2303,11 +2287,8 @@ sort by due
 				
 				// Add completed tasks (Completed)
 				if (completedTasks.length > 0) {
-					// Add separator header for Completed
-					todayContainer.createEl('h3', { 
-						text: this.view.t('completedSection'),
-						cls: 'tasks-modal-section-header'
-					});
+					// Header removed as per user request
+
 
 					const markdown = await this.generateMarkdownForTasks(completedTasks);
 					await MarkdownRenderer.renderMarkdown(
