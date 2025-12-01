@@ -2124,10 +2124,15 @@ class TasksForDateModal extends Modal {
 					const month = String(this.date.getMonth() + 1).padStart(2, '0');
 					const day = String(this.date.getDate()).padStart(2, '0');
 					const dateQuery = `${year}-${month}-${day}`;
+					
+					// Get folder path from settings
+					const folderPath = (this.view.plugin.settings.calendarFolderPath || this.view.plugin.settings.tasksFolderPath || '').trim().replace('/', '');
+					const pathFilter = folderPath ? `path includes "${folderPath}"` : '';
 
 					const queryOverdue = `\`\`\`tasks
 due before ${dateQuery}
 not done
+${pathFilter}
 show tree
 hide task count
 sort by due
@@ -2199,6 +2204,10 @@ sort by due
 					const day = String(this.date.getDate()).padStart(2, '0');
 					const dateQuery = `${year}-${month}-${day}`;
 					
+					// Get folder path from settings
+					const folderPath = (this.view.plugin.settings.calendarFolderPath || this.view.plugin.settings.tasksFolderPath || '').trim().replace('/', '');
+					const pathFilter = folderPath ? `path includes ${folderPath}` : '';
+					
 					const todayContainer = markdownContainer.createDiv('tasks-modal-today-section');
 
 					// Query for incomplete tasks (Current)
@@ -2207,6 +2216,7 @@ sort by due
 						const queryIncomplete = `\`\`\`tasks
 due on ${dateQuery}
 not done
+${pathFilter}
 show tree
 hide task count
 sort by due
@@ -2226,6 +2236,7 @@ sort by due
 						const queryCompleted = `\`\`\`tasks
 due on ${dateQuery}
 done
+${pathFilter}
 show tree
 hide task count
 sort by due
@@ -2303,7 +2314,6 @@ sort by due
 			// After rendering, attach click handlers to checkboxes
 			setTimeout(() => {
 				this.attachCheckboxHandlers(markdownContainer);
-				this.attachTaskClickHandlers(markdownContainer);
 				this.attachTaskExtrasHandlers(markdownContainer);
 			}, 300);
 		}
@@ -2536,34 +2546,6 @@ sort by due
 		container.addEventListener('touchcancel', handleTouchCancel, { passive: false });
 	}
 	
-	private scrollToCurrentTask(container: HTMLElement) {
-		// Find all task list items
-		const listItems = container.querySelectorAll('ul > li, ol > li');
-		
-		if (listItems.length === 0 || this.currentTaskIndex >= listItems.length) {
-			return;
-		}
-		
-		const targetItem = listItems[this.currentTaskIndex] as HTMLElement;
-		if (targetItem) {
-			// Scroll the task into view
-			targetItem.scrollIntoView({
-				behavior: 'smooth',
-				block: 'center'
-			});
-			
-			// Highlight the current task briefly
-			targetItem.style.transition = 'background-color 0.3s ease';
-			targetItem.style.backgroundColor = 'var(--background-modifier-hover)';
-			setTimeout(() => {
-				targetItem.style.backgroundColor = '';
-				setTimeout(() => {
-					targetItem.style.transition = '';
-				}, 300);
-			}, 500);
-		}
-	}
-	
 	private attachCheckboxHandlers(markdownContainer: HTMLElement) {
 		// Find only top-level task checkboxes (not in nested lists)
 		// Get top-level list items (direct children of top-level ul/ol)
@@ -2657,10 +2639,6 @@ sort by due
 				taskIndex++;
 			}
 		});
-	}
-	
-	private attachTaskClickHandlers(markdownContainer: HTMLElement) {
-		// Task click handlers removed - tasks are no longer clickable to open files
 	}
 	
 	private attachTaskExtrasHandlers(markdownContainer: HTMLElement) {
